@@ -37,8 +37,8 @@ ONBUILD RUN /opt/nvidia/driver.run --silent --no-kernel-module --no-unified-memo
 ONBUILD RUN wget --no-check-certificate http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_${CUDA_VERSION}-1_amd64.deb \
     && dpkg -i cuda-repo-ubuntu1604_${CUDA_VERSION}-1_amd64.deb \
     && apt-get -y update \
-    && apt-get -y --no-install-suggests --no-install-recommends \
-        cuda-command-line-tools-8.0       \
+    && apt-get -y install --no-install-suggests --no-install-recommends \
+        cuda-command-line-tools-8.0  \
         cuda-nvgraph-dev-8.0 \
         cuda-cusparse-dev-8.0 \ 
         cuda-cublas-dev-8.0 \
