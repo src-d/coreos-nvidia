@@ -43,6 +43,7 @@ ONBUILD RUN wget --no-check-certificate http://developer.download.nvidia.com/com
         cuda-cusparse-dev-8.0 \ 
         cuda-cublas-dev-8.0 \
         cuda-curand-dev-8.0 \
+        cuda-cufft-dev-8.0 \
         cuda-cusolver-dev-8.0 \
     && sed -i 's#"$#:/usr/local/cuda-8.0/bin"#' /etc/environment \
     && rm cuda-repo-ubuntu1604_${CUDA_VERSION}-1_amd64.deb
