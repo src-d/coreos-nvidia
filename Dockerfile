@@ -38,7 +38,7 @@ ONBUILD RUN wget --no-check-certificate http://developer.download.nvidia.com/com
     && dpkg -i cuda-repo-ubuntu1604_${CUDA_VERSION}-1_amd64.deb \
     && apt-get -y update \
     && apt-get -y install --no-install-suggests --no-install-recommends \
-        cuda-command-line-tools-8.0  \
+        cuda-command-line-tools-8.0 \
         cuda-nvgraph-dev-8.0 \
         cuda-cusparse-dev-8.0 \ 
         cuda-cublas-dev-8.0 \
@@ -46,6 +46,10 @@ ONBUILD RUN wget --no-check-certificate http://developer.download.nvidia.com/com
         cuda-cufft-dev-8.0 \
         cuda-cusolver-dev-8.0 \
     && sed -i 's#"$#:/usr/local/cuda-8.0/bin"#' /etc/environment \
-    && rm cuda-repo-ubuntu1604_${CUDA_VERSION}-1_amd64.deb
+    && rm cuda-repo-ubuntu1604_${CUDA_VERSION}-1_amd64.deb \
+    && cd /usr/local/cuda-8.0 && ln -s . cuda \
+    && wget http://developer.download.nvidia.com/compute/redist/cudnn/v5.1/cudnn-8.0-linux-x64-v5.1.tgz \
+    && tar -xf cudnn-8.0-linux-x64-v5.1.tgz \
+    && rm cudnn-8.0-linux-x64-v5.1.tgz
     
 ENV PATH /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/cuda-8.0/bin
