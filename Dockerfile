@@ -26,8 +26,8 @@ RUN mkdir -p /opt/nvidia && cd /opt/nvidia/ \
 
 ENV NVIDIA_INSTALLER /opt/nvidia/NVIDIA-Linux-x86_64-${DRIVER_VERSION}/nvidia-installer
 CMD ${NVIDIA_INSTALLER} -q -a -n -s --kernel-source-path=/usr/src/kernels/linux/ \
-    && modprobe nvidia \
-    && modprobe nvidia-uvm
+    && insmod /lib/modules/`uname -r`/video/nvidia.ko \
+    && insmod /lib/modules/`uname -r`/video/nvidia-uvm.ko
 
 
 # ONBUILD, we install the NVIDIA driver and the cuda libraries 
