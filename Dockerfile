@@ -1,7 +1,7 @@
 FROM ubuntu:16.04
 MAINTAINER source{d} 
 
-ENV DRIVER_VERSION 381.09
+ENV DRIVER_VERSION 384.59
 
 RUN apt-get -y update \
     && apt-get -y install wget git bc make dpkg-dev libssl-dev module-init-tools \
