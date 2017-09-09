@@ -66,15 +66,21 @@ RUN mkdir  ${NVIDIA_BUILD_PATH}/lib/modules/ && \
 FROM ubuntu:17.10
 MAINTAINER source{d}
 
+ARG COREOS_RELEASE_CHANNEL=stable
+ARG COREOS_VERSION
+ARG KERNEL_VERSION
+ARG NVIDIA_DRIVER_VERSION
+
+LABEL vendor="source{d}" \
+      coreos.release-channel=${COREOS_RELEASE_CHANNEL} \
+      coreos.version=${COREOS_VERSION} \
+      coreos.kernel-version=${KERNEL_VERSION} \
+      nvidia.driver-version=${NVIDIA_DRIVER_VERSION}
+
 RUN apt-get -y update && \
     apt-get -y install module-init-tools && \
     apt-get autoremove && \
     apt-get clean
-
-ARG COREOS_RELEASE_CHANNEL=stable
-ARG COREOS_VERSION
-ARG NVIDIA_DRIVER_VERSION
-ARG KERNEL_VERSION
 
 ENV COREOS_RELEASE_CHANNEL ${COREOS_RELEASE_CHANNEL}
 ENV COREOS_VERSION ${COREOS_VERSION}
