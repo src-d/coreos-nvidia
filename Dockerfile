@@ -1,85 +1,95 @@
-FROM ubuntu:17.10
+FROM ubuntu:17.10 as BUILD
 MAINTAINER source{d}
 
-ENV RELEASE_CHANNEL stable
-ENV COREOS_VERSION 1465.7.0
-ENV DRIVER_VERSION 384.59
-ENV KERNEL_VERSION 4.12.10
+RUN apt-get -y update && \
+    apt-get -y install curl git bc make dpkg-dev libssl-dev module-init-tools p7zip-full && \
+    apt-get autoremove && \
+    apt-get clean
 
-RUN apt-get -y update \
-    && apt-get -y install wget git bc make dpkg-dev libssl-dev module-init-tools p7zip-full \
-    && apt-get autoremove \
-    && apt-get clean
+
+ARG COREOS_RELEASE_CHANNEL=stable
+ARG COREOS_VERSION
+ARG NVIDIA_DRIVER_VERSION
+ARG KERNEL_VERSION
 
 ENV KERNEL_PATH /usr/src/kernels/linux
 ENV KERNEL_NAME ${KERNEL_VERSION}-coreos
 ENV KERNEL_REPOSITORY git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git
-ENV COREOS_RELEASE_URL https://${RELEASE_CHANNEL}.release.core-os.net/amd64-usr/${COREOS_VERSION}
+ENV COREOS_RELEASE_URL https://${COREOS_RELEASE_CHANNEL}.release.core-os.net/amd64-usr/${COREOS_VERSION}
 
-# Download Phase
-RUN mkdir -p ${KERNEL_PATH} && \
-    git clone ${KERNEL_REPOSITORY} \
+RUN git clone ${KERNEL_REPOSITORY} \
         --single-branch \
         --depth 1 \
         --branch v${KERNEL_VERSION} \
-        ${KERNEL_PATH} && \
-    cd ${KERNEL_PATH} && \
-    git checkout -b stable v${KERNEL_VERSION} && \
-    wget ${COREOS_RELEASE_URL}/coreos_developer_container.bin.bz2 \
-        --output-document /tmp/coreos_developer_container.bin.bz2 && \
-    bzip2 -d /tmp/coreos_developer_container.bin.bz2 && \
-    7z e /tmp/coreos_developer_container.bin "usr/lib64/modules/*-coreos/build/.config"
+        ${KERNEL_PATH}
 
-RUN cd ${KERNEL_PATH} && \
-    make modules_prepare && \
-    sed -i -e "s/${KERNEL_VERSION}/${KERNEL_NAME}/" include/generated/utsrelease.h
+WORKDIR ${KERNEL_PATH}
 
-ENV NVIDIA_DRIVER_URL http://us.download.nvidia.com/XFree86/Linux-x86_64/${DRIVER_VERSION}/NVIDIA-Linux-x86_64-${DRIVER_VERSION}.run
+RUN git checkout -b stable v${KERNEL_VERSION}
+RUN curl ${COREOS_RELEASE_URL}/coreos_developer_container.bin.bz2 | \
+        bzip2 -d > /tmp/coreos_developer_container.bin
+RUN 7z e /tmp/coreos_developer_container.bin "usr/lib64/modules/*-coreos/build/.config"
+RUN make modules_prepare
+RUN sed -i -e "s/${KERNEL_VERSION}/${KERNEL_NAME}/" include/generated/utsrelease.h
+
+ENV NVIDIA_DRIVER_URL http://us.download.nvidia.com/XFree86/Linux-x86_64/${NVIDIA_DRIVER_VERSION}/NVIDIA-Linux-x86_64-${NVIDIA_DRIVER_VERSION}.run
+
+
+ENV NVIDIA_PATH /opt/nvidia
+ENV NVIDIA_BUILD_PATH /opt/nvidia/build
 
 # NVIDIA driver
-RUN mkdir -p /opt/nvidia && \
-    cd /opt/nvidia/ && \
-    wget ${NVIDIA_DRIVER_URL} -O /opt/nvidia/driver.run \
-    && chmod +x /opt/nvidia/driver.run \
-    && /opt/nvidia/driver.run \
+WORKDIR ${NVIDIA_PATH}/download
+
+RUN curl ${NVIDIA_DRIVER_URL} -o driver.run && \
+    chmod +x driver.run
+RUN ${NVIDIA_PATH}/download/driver.run \
         --accept-license \
         --extract-only \
         --ui=none
 
-ENV NVIDIA_INSTALLER /opt/nvidia/NVIDIA-Linux-x86_64-${DRIVER_VERSION}/nvidia-installer
+ENV NVIDIA_INSTALLER /opt/nvidia/download/NVIDIA-Linux-x86_64-${NVIDIA_DRIVER_VERSION}/nvidia-installer
 RUN ${NVIDIA_INSTALLER} \
     --accept-license \
     --no-questions \
     --ui=none \
     --no-precompiled-interface \
     --kernel-source-path=${KERNEL_PATH} \
-    --kernel-name=${KERNEL_NAME}
+    --kernel-name=${KERNEL_NAME} \
+    --installer-prefix=${NVIDIA_BUILD_PATH} \
+    --utility-prefix=${NVIDIA_BUILD_PATH} \
+    --opengl-prefix=${NVIDIA_BUILD_PATH}
 
+RUN mkdir  ${NVIDIA_BUILD_PATH}/lib/modules/ && \
+    cp -rf /lib/modules/${KERNEL_NAME} ${NVIDIA_BUILD_PATH}/lib/modules/${KERNEL_NAME}
 
-# insmod /lib/modules/`uname -r`/video/nvidia.ko \
-# insmod /lib/modules/`uname -r`/video/nvidia-uvm.ko
+FROM ubuntu:17.10
+MAINTAINER source{d}
 
+RUN apt-get -y update && \
+    apt-get -y install module-init-tools && \
+    apt-get autoremove && \
+    apt-get clean
 
-# ONBUILD, we install the NVIDIA driver and the cuda libraries
-ONBUILD ENV CUDA_VERSION 8.0.44
+ARG COREOS_RELEASE_CHANNEL=stable
+ARG COREOS_VERSION
+ARG NVIDIA_DRIVER_VERSION
+ARG KERNEL_VERSION
 
-ONBUILD RUN /opt/nvidia/driver.run --silent --no-kernel-module --no-unified-memory --no-opengl-files
-ONBUILD RUN wget --no-check-certificate http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_${CUDA_VERSION}-1_amd64.deb \
-    && dpkg -i cuda-repo-ubuntu1604_${CUDA_VERSION}-1_amd64.deb \
-    && apt-get -y update \
-    && apt-get -y install --no-install-suggests --no-install-recommends \
-        cuda-command-line-tools-8.0 \
-        cuda-nvgraph-dev-8.0 \
-        cuda-cusparse-dev-8.0 \
-        cuda-cublas-dev-8.0 \
-        cuda-curand-dev-8.0 \
-        cuda-cufft-dev-8.0 \
-        cuda-cusolver-dev-8.0 \
-    && sed -i 's#"$#:/usr/local/cuda-8.0/bin"#' /etc/environment \
-    && rm cuda-repo-ubuntu1604_${CUDA_VERSION}-1_amd64.deb \
-    && cd /usr/local/cuda-8.0 && ln -s . cuda \
-    && wget http://developer.download.nvidia.com/compute/redist/cudnn/v5.1/cudnn-8.0-linux-x64-v5.1.tgz \
-    && tar -xf cudnn-8.0-linux-x64-v5.1.tgz \
-    && rm cudnn-8.0-linux-x64-v5.1.tgz
+ENV COREOS_RELEASE_CHANNEL ${COREOS_RELEASE_CHANNEL}
+ENV COREOS_VERSION ${COREOS_VERSION}
+ENV NVIDIA_DRIVER_VERSION ${NVIDIA_DRIVER_VERSION}
+ENV KERNEL_VERSION ${KERNEL_VERSION}
 
-ENV PATH /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/cuda-8.0/bin
+ENV NVIDIA_PATH /opt/nvidia
+ENV NVIDIA_BIN_PATH ${NVIDIA_PATH}/bin
+ENV NVIDIA_LIB_PATH ${NVIDIA_PATH}/lib
+ENV NVIDIA_MODULES_PATH ${NVIDIA_LIB_PATH}/modules/${KERNEL_VERSION}-coreos/video
+
+COPY --from=BUILD /opt/nvidia/build ${NVIDIA_PATH}
+
+ENV PATH $PATH:/opt/nvidia/bin/
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${NVIDIA_PATH}/lib
+
+CMD insmod ${NVIDIA_MODULES_PATH}/nvidia.ko && \
+    insmod ${NVIDIA_MODULES_PATH}/nvidia-uvm.ko
