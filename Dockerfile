@@ -71,10 +71,10 @@ ARG KERNEL_VERSION
 ARG NVIDIA_DRIVER_VERSION
 
 LABEL vendor="source{d}" \
-      coreos.release-channel=${COREOS_RELEASE_CHANNEL} \
-      coreos.version=${COREOS_VERSION} \
-      coreos.kernel-version=${KERNEL_VERSION} \
-      nvidia.driver-version=${NVIDIA_DRIVER_VERSION}
+      com.coreos.release-channel=${COREOS_RELEASE_CHANNEL} \
+      com.coreos.version=${COREOS_VERSION} \
+      com.coreos.kernel.version=${KERNEL_VERSION} \
+      com.nvidia.driver.version=${NVIDIA_DRIVER_VERSION}
 
 RUN apt-get -y update && \
     apt-get -y install module-init-tools pciutils && \
