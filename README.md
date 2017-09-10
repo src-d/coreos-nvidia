@@ -53,7 +53,22 @@ And now just enable and start the unit:
 sudo systemctl enable /etc/systemd/system/coreos-nvidia.service
 sudo systemctl start coreos-nvidia.service
 ```
+### The driver in other containers
+
+To easily use the NVIDIA driver in other standard containers, we use the `--volumes-from`, this requires to run a container based on our image, the `/dev/nvidia*` devices and a few environment variables to make it work properly.
+
+```sh
+source /etc/os-release
+docker run -d --name nvidia srcd/coreos-nvidia:${VERSION} sleep infinity
+docker run --rm -it \
+    --volumes-from nvidia \
+    --env PATH=$PATH:/opt/nvidia/bin/ \
+    --env LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/nvidia/lib \
+    $(for d in /dev/nvidia*; do echo -n "--device $d "; done) \
+    fedora:26 nvidia-smi
+```
 
 ## License
 
 GPLv3, see [LICENSE](LICENSE)
+

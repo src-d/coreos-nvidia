@@ -94,8 +94,10 @@ ENV NVIDIA_MODULES_PATH ${NVIDIA_LIB_PATH}/modules/${KERNEL_VERSION}-coreos/vide
 COPY --from=BUILD /opt/nvidia/build ${NVIDIA_PATH}
 COPY scripts/nvidia-mkdevs ${NVIDIA_BIN_PATH}/nvidia-mkdevs
 
-ENV PATH $PATH:/opt/nvidia/bin/
-ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${NVIDIA_PATH}/lib
+ENV PATH $PATH:${NVIDIA_BIN_PATH}
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${NVIDIA_LIB_PATH}
+
+VOLUME ${NVIDIA_PATH}
 
 CMD insmod ${NVIDIA_MODULES_PATH}/nvidia.ko && \
     insmod ${NVIDIA_MODULES_PATH}/nvidia-uvm.ko && \
