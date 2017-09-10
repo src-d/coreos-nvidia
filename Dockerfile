@@ -25,7 +25,7 @@ RUN git clone ${KERNEL_REPOSITORY} \
 
 WORKDIR ${KERNEL_PATH}
 
-RUN git checkout -b stable v${KERNEL_VERSION}
+RUN git checkout -b stable v${KERNEL_VERSION} && rm -rf .git
 RUN curl ${COREOS_RELEASE_URL}/coreos_developer_container.bin.bz2 | \
         bzip2 -d > /tmp/coreos_developer_container.bin
 RUN 7z e /tmp/coreos_developer_container.bin "usr/lib64/modules/*-coreos/build/.config"
@@ -33,7 +33,6 @@ RUN make modules_prepare
 RUN sed -i -e "s/${KERNEL_VERSION}/${KERNEL_NAME}/" include/generated/utsrelease.h
 
 ENV NVIDIA_DRIVER_URL http://us.download.nvidia.com/XFree86/Linux-x86_64/${NVIDIA_DRIVER_VERSION}/NVIDIA-Linux-x86_64-${NVIDIA_DRIVER_VERSION}.run
-
 
 ENV NVIDIA_PATH /opt/nvidia
 ENV NVIDIA_BUILD_PATH /opt/nvidia/build
@@ -78,7 +77,7 @@ LABEL vendor="source{d}" \
       nvidia.driver-version=${NVIDIA_DRIVER_VERSION}
 
 RUN apt-get -y update && \
-    apt-get -y install module-init-tools && \
+    apt-get -y install module-init-tools pciutils && \
     apt-get autoremove && \
     apt-get clean
 
@@ -93,9 +92,11 @@ ENV NVIDIA_LIB_PATH ${NVIDIA_PATH}/lib
 ENV NVIDIA_MODULES_PATH ${NVIDIA_LIB_PATH}/modules/${KERNEL_VERSION}-coreos/video
 
 COPY --from=BUILD /opt/nvidia/build ${NVIDIA_PATH}
+COPY scripts/nvidia-mkdevs ${NVIDIA_BIN_PATH}/nvidia-mkdevs
 
 ENV PATH $PATH:/opt/nvidia/bin/
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${NVIDIA_PATH}/lib
 
 CMD insmod ${NVIDIA_MODULES_PATH}/nvidia.ko && \
-    insmod ${NVIDIA_MODULES_PATH}/nvidia-uvm.ko
+    insmod ${NVIDIA_MODULES_PATH}/nvidia-uvm.ko && \
+    nvidia-mkdevs

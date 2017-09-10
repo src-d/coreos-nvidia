@@ -27,7 +27,7 @@ KERNEL_VERSION = $(shell \
 WORKDIR := $(PWD)
 
 # Docker configuration
-DOCKER_ORG ?=
+DOCKER_ORG ?= srcd
 DOCKER_REPOSITORY ?= coreos-nvidia
 DOCKER_USERNAME ?=
 DOCKER_PASSWORD ?=
