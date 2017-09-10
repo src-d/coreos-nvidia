@@ -37,11 +37,13 @@ After=docker.service
 Requires=docker.service
 
 [Service]
-Type=oneshot
-RemainAfterExit=yes
-TimeoutStartSec=0
+TimeoutStartSec=20m
 EnvironmentFile=/etc/os-release
-ExecStart=/usr/bin/docker run --rm --privileged --volume /:/rootfs/ srcd/coreos-nvidia:${VERSION}
+ExecStartPre=-/usr/bin/docker rm nvidia-driver
+ExecStartPre=/usr/bin/docker run --rm --privileged --volume /:/rootfs/ srcd/coreos-nvidia:${VERSION}
+ExecStart=/usr/bin/docker run --rm --name nvidia-driver srcd/coreos-nvidia:${VERSION} sleep infinity
+ExecStop=/usr/bin/docker stop nvidia-driver
+ExecStop=-/sbin/rmmod nvidia_uvm nvidia
 
 [Install]
 WantedBy=multi-user.target
@@ -53,19 +55,33 @@ And now just enable and start the unit:
 sudo systemctl enable /etc/systemd/system/coreos-nvidia.service
 sudo systemctl start coreos-nvidia.service
 ```
+
 ### The driver in other containers
 
 To easily use the NVIDIA driver in other standard containers, we use the `--volumes-from`, this requires to run a container based on our image, the `/dev/nvidia*` devices and a few environment variables to make it work properly.
 
+A simple example running `nvidia-smi` in a bare `fedora` container:
+
 ```sh
-source /etc/os-release
-docker run -d --name nvidia srcd/coreos-nvidia:${VERSION} sleep infinity
 docker run --rm -it \
-    --volumes-from nvidia \
+    --volumes-from nvidia-driver \
     --env PATH=$PATH:/opt/nvidia/bin/ \
     --env LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/nvidia/lib \
     $(for d in /dev/nvidia*; do echo -n "--device $d "; done) \
     fedora:26 nvidia-smi
+```
+
+Running the `tensorflow` GPU enabled container and verifying the identified devices:
+
+```sh
+docker run --rm -it \
+    --volumes-from nvidia-driver \
+    --env PATH=$PATH:/opt/nvidia/bin/ \
+    --env LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/nvidia/lib \
+    $(for d in /dev/nvidia*; do echo -n "--device $d "; done) \
+    gcr.io/tensorflow/tensorflow:latest-gpu \
+        python -c "import tensorflow as tf;tf.Session(config=tf.ConfigProto(log_device_placement=True))"
+
 ```
 
 ## License
