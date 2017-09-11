@@ -16,12 +16,13 @@ ifneq ($(origin NVIDIA_DRIVER_VERSION), undefined)
 	NVIDIA_DRIVER_VERSION = $(shell \
 		curl -s $(NVIDIA_VERSIONS_URL) | \
 			grep -i "current $(NVIDIA_MATURIRY)" | \
-			cut -d' ' -f3-)
+				cut -d' ' -f3-)
 endif
 
 KERNEL_VERSION = $(shell \
 	curl -s ${COREOS_RELEASES_URL} | \
-		jq -r .[\"${COREOS_VERSION}\"].major_software.kernel[0])
+		jq -r .[\"${COREOS_VERSION}\"].major_software.kernel[0] | \
+			sed -e 's/\(\.0\)*$$//g')
 
 # Environment
 WORKDIR := $(PWD)
