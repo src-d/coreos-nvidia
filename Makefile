@@ -58,6 +58,7 @@ validate:
 build: validate
 	echo "Building Docker Image ..." && \
 	docker build \
+		--build-arg COREOS_RELEASE_CHANNEL=$(COREOS_RELEASE_CHANNEL) \
 		--build-arg COREOS_VERSION=$(COREOS_VERSION) \
 		--build-arg NVIDIA_DRIVER_VERSION=$(NVIDIA_DRIVER_VERSION) \
 		--build-arg KERNEL_VERSION=$(KERNEL_VERSION) \
