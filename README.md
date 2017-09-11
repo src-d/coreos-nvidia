@@ -1,11 +1,22 @@
 
-# Container Linux (aka CoreOS) NVIDIA Driver
+# Container Linux (aka CoreOS) NVIDIA Driver [![Build Status](https://travis-ci.org/src-d/coreos-nvidia.svg?branch=master)](https://travis-ci.org/src-d/coreos-nvidia)
 
 Yet another NVIDIA driver container for Container Linux (aka CoreOS).
 
-## Usage
+Many different solutions to load the NVIDIA modules in a CoreOS kernel has been created during the last years, this is just another one trying to fit the *source{d}* requirements:
 
-### Manual execution
+- Load the NVIDIA modules in the kernel of the host.
+- Make available the NVIDIA libraries and binaries to other containers.
+- Works with unmodified third-party containers.
+- Avoid permanent changes on the host system.
+
+## Contents
+
+* [Hot it works]($how-it-works)
+* [Installation](#installation)
+* [Usage](#usage)
+
+## How it works
 
 Executing the `srcd/coreos-nvidia` for your CoreOS version the nvidia modules are loaded in the kernel and the devices are created in the rootfs.
 
@@ -24,7 +35,7 @@ docker run --rm $(for d in /dev/nvidia*; do echo -n "--device $d "; done) \
 // GPU 0: Tesla K80 (UUID: GPU-d57ec7e8-ab97-8612-54ac-9d53a183f818)
 ```
 
-### Systemd Unit
+## Installation
 
 Since the changes made by the container aren't permanent, the container should be executed in every boot.
 
@@ -56,7 +67,7 @@ sudo systemctl enable /etc/systemd/system/coreos-nvidia.service
 sudo systemctl start coreos-nvidia.service
 ```
 
-### The driver in other containers
+## Usage
 
 To easily use the NVIDIA driver in other standard containers, we use the `--volumes-from`, this requires to run a container based on our image, the `/dev/nvidia*` devices and a few environment variables to make it work properly.
 
