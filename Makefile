@@ -56,9 +56,14 @@ validate:
 		exit 1; \
 	fi;
 
+pull: validate
+	echo "Trying to pull previous build ..."
+	-docker pull $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(DOCKER_REPOSITORY):$(COREOS_VERSION)
+
 build: validate
 	echo "Building Docker Image ..." && \
 	docker build \
+		--cache-from $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(DOCKER_REPOSITORY):$(COREOS_VERSION) \
 		--build-arg COREOS_RELEASE_CHANNEL=$(COREOS_RELEASE_CHANNEL) \
 		--build-arg COREOS_VERSION=$(COREOS_VERSION) \
 		--build-arg NVIDIA_DRIVER_VERSION=$(NVIDIA_DRIVER_VERSION) \
