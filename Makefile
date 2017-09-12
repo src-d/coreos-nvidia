@@ -1,6 +1,9 @@
+# Linux Container release channel (stable, beta or alpha)
 COREOS_RELEASE_CHANNEL ?= stable
 COREOS_RELEASES_URL := https://coreos.com/releases/releases-$(COREOS_RELEASE_CHANNEL).json
 
+# Linux Container version, if empty the last available version for the given
+# release channel will be use making a request to the release feed.
 COREOS_VERSION ?=
 ifneq ($(origin COREOS_VERSION), undefined)
 	COREOS_VERSION = $(shell \
@@ -11,6 +14,8 @@ endif
 NVIDIA_MATURIRY ?= official
 NVIDIA_VERSIONS_URL := https://raw.githubusercontent.com/aaronp24/nvidia-versions/master/nvidia-versions.txt
 
+# NVIDIA Driver version, if empty the last available version will be used. The
+# version is retrieve from https://github.com/aaronp24/nvidia-versions/
 NVIDIA_DRIVER_VERSION ?=
 ifneq ($(origin NVIDIA_DRIVER_VERSION), undefined)
 	NVIDIA_DRIVER_VERSION = $(shell \
@@ -19,6 +24,8 @@ ifneq ($(origin NVIDIA_DRIVER_VERSION), undefined)
 				cut -d' ' -f3-)
 endif
 
+# Kernel version used in the given `COREOS_VERSION`, if empty is retrieve from
+# the CoreOS release feed.
 KERNEL_VERSION = $(shell \
 	curl -s ${COREOS_RELEASES_URL} | \
 		jq -r .[\"${COREOS_VERSION}\"].major_software.kernel[0] | \
