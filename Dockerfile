@@ -11,6 +11,7 @@ ARG COREOS_RELEASE_CHANNEL=stable
 ARG COREOS_VERSION
 ARG NVIDIA_DRIVER_VERSION
 ARG KERNEL_VERSION
+ARG KERNEL_TAG
 
 ENV KERNEL_PATH /usr/src/kernels/linux
 ENV KERNEL_NAME ${KERNEL_VERSION}-coreos
@@ -20,15 +21,15 @@ ENV COREOS_RELEASE_URL https://${COREOS_RELEASE_CHANNEL}.release.core-os.net/amd
 RUN git clone ${KERNEL_REPOSITORY} \
         --single-branch \
         --depth 1 \
-        --branch v${KERNEL_VERSION} \
+        --branch v${KERNEL_TAG} \
         ${KERNEL_PATH}
 
 WORKDIR ${KERNEL_PATH}
 
-RUN git checkout -b stable v${KERNEL_VERSION} && rm -rf .git
+RUN git checkout -b stable v${KERNEL_TAG} && rm -rf .git
 RUN curl ${COREOS_RELEASE_URL}/coreos_developer_container.bin.bz2 | \
         bzip2 -d > /tmp/coreos_developer_container.bin
-RUN 7z e /tmp/coreos_developer_container.bin "usr/lib64/modules/*-coreos/build/.config"
+RUN 7z e /tmp/coreos_developer_container.bin "usr/lib64/modules/*-coreos*/build/.config"
 RUN make modules_prepare
 RUN sed -i -e "s/${KERNEL_VERSION}/${KERNEL_NAME}/" include/generated/utsrelease.h
 

@@ -28,8 +28,9 @@ endif
 # the CoreOS release feed.
 KERNEL_VERSION = $(shell \
 	curl -s ${COREOS_RELEASES_URL} | \
-		jq -r .[\"${COREOS_VERSION}\"].major_software.kernel[0] | \
-			sed -e 's/\(\.0\)*$$//g')
+		jq -r .[\"${COREOS_VERSION}\"].major_software.kernel[0])
+
+KERNEL_TAG := $(shell echo ${KERNEL_VERSION} | sed -e 's/\(\.0\)*$$//g')
 
 # Environment
 WORKDIR := $(PWD)
@@ -75,6 +76,7 @@ build: validate
 		--build-arg COREOS_VERSION=$(COREOS_VERSION) \
 		--build-arg NVIDIA_DRIVER_VERSION=$(NVIDIA_DRIVER_VERSION) \
 		--build-arg KERNEL_VERSION=$(KERNEL_VERSION) \
+		--build-arg KERNEL_TAG=$(KERNEL_TAG) \
 		--tag $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(DOCKER_REPOSITORY):$(COREOS_VERSION) \
 		--file $(WORKDIR)/Dockerfile . \
 
