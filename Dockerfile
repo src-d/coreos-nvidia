@@ -14,7 +14,6 @@ ARG KERNEL_VERSION
 ARG KERNEL_TAG
 
 ENV KERNEL_PATH /usr/src/kernels/linux
-ENV KERNEL_NAME ${KERNEL_VERSION}-coreos
 ENV KERNEL_REPOSITORY git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git
 ENV COREOS_RELEASE_URL https://${COREOS_RELEASE_CHANNEL}.release.core-os.net/amd64-usr/${COREOS_VERSION}
 
@@ -30,8 +29,9 @@ RUN git checkout -b stable v${KERNEL_TAG} && rm -rf .git
 RUN curl ${COREOS_RELEASE_URL}/coreos_developer_container.bin.bz2 | \
         bzip2 -d > /tmp/coreos_developer_container.bin
 RUN 7z e /tmp/coreos_developer_container.bin "usr/lib64/modules/*-coreos*/build/.config"
+RUN 7z e /tmp/coreos_developer_container.bin "usr/lib64/modules/*-coreos*/build/include/config/kernel.release" && cp kernel.release /tmp/kernel.release
 RUN make modules_prepare
-RUN sed -i -e "s/${KERNEL_VERSION}/${KERNEL_NAME}/" include/generated/utsrelease.h
+RUN sed -i -e "s/${KERNEL_VERSION}/$(cat /tmp/kernel.release)/" include/generated/utsrelease.h
 
 ENV NVIDIA_DRIVER_URL http://us.download.nvidia.com/XFree86/Linux-x86_64/${NVIDIA_DRIVER_VERSION}/NVIDIA-Linux-x86_64-${NVIDIA_DRIVER_VERSION}.run
 
@@ -55,13 +55,13 @@ RUN ${NVIDIA_INSTALLER} \
     --ui=none \
     --no-precompiled-interface \
     --kernel-source-path=${KERNEL_PATH} \
-    --kernel-name=${KERNEL_NAME} \
+    --kernel-name=$(cat /tmp/kernel.release) \
     --installer-prefix=${NVIDIA_BUILD_PATH} \
     --utility-prefix=${NVIDIA_BUILD_PATH} \
     --opengl-prefix=${NVIDIA_BUILD_PATH}
 
 RUN mkdir  ${NVIDIA_BUILD_PATH}/lib/modules/ && \
-    cp -rf /lib/modules/${KERNEL_NAME} ${NVIDIA_BUILD_PATH}/lib/modules/${KERNEL_NAME}
+    cp -rf /lib/modules/$(cat /tmp/kernel.release) ${NVIDIA_BUILD_PATH}/lib/modules/${KERNEL_VERSION}
 
 FROM ubuntu:17.10
 MAINTAINER source{d}
@@ -90,7 +90,7 @@ ENV KERNEL_VERSION ${KERNEL_VERSION}
 ENV NVIDIA_PATH /opt/nvidia
 ENV NVIDIA_BIN_PATH ${NVIDIA_PATH}/bin
 ENV NVIDIA_LIB_PATH ${NVIDIA_PATH}/lib
-ENV NVIDIA_MODULES_PATH ${NVIDIA_LIB_PATH}/modules/${KERNEL_VERSION}-coreos/video
+ENV NVIDIA_MODULES_PATH ${NVIDIA_LIB_PATH}/modules/${KERNEL_VERSION}/video
 
 COPY --from=BUILD /opt/nvidia/build ${NVIDIA_PATH}
 COPY scripts/nvidia-mkdevs ${NVIDIA_BIN_PATH}/nvidia-mkdevs
