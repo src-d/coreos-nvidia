@@ -2,7 +2,7 @@ FROM ubuntu:17.10 as BUILD
 MAINTAINER source{d}
 
 RUN apt-get -y update && \
-    apt-get -y install curl git bc make dpkg-dev libssl-dev module-init-tools p7zip-full && \
+    apt-get -y install curl git bc make dpkg-dev libssl-dev module-init-tools p7zip-full libelf-dev && \
     apt-get autoremove && \
     apt-get clean
 
