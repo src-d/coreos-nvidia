@@ -100,6 +100,8 @@ ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${NVIDIA_LIB_PATH}
 
 VOLUME ${NVIDIA_PATH}
 
-CMD insmod ${NVIDIA_MODULES_PATH}/nvidia.ko && \
+CMD insmod `find /rootfs/usr -iname ipmi_msghandler.ko` && \
+    insmod `find /rootfs/usr -iname ipmi_devintf.ko` && \
+    insmod ${NVIDIA_MODULES_PATH}/nvidia.ko && \
     insmod ${NVIDIA_MODULES_PATH}/nvidia-uvm.ko && \
     nvidia-mkdevs
