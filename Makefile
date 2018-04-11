@@ -82,7 +82,7 @@ build: validate
 
 push: build
 	if [ "$(DOCKER_USERNAME)" != "" ]; then \
-		docker login -u="$(DOCKER_USERNAME)" -p="$(DOCKER_PASSWORD)"; \
+		docker login --username="$(DOCKER_USERNAME)" --password-stdin <<< "$(DOCKER_PASSWORD)"; \
 	fi; \
 	docker push $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(DOCKER_REPOSITORY):$(COREOS_VERSION)
 
