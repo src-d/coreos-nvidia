@@ -2,7 +2,7 @@ FROM ubuntu:17.10 as BUILD
 MAINTAINER source{d}
 
 RUN apt-get -y update && \
-    apt-get -y install curl git bc make dpkg-dev libssl-dev module-init-tools p7zip-full libelf-dev && \
+    apt-get -y install curl git bc make dpkg-dev libssl-dev module-init-tools p7zip-full libelf-dev bison flex && \
     apt-get autoremove && \
     apt-get clean
 
@@ -29,6 +29,7 @@ RUN git checkout -b stable v${KERNEL_TAG} && rm -rf .git
 RUN curl ${COREOS_RELEASE_URL}/coreos_developer_container.bin.bz2 | \
         bzip2 -d > /tmp/coreos_developer_container.bin
 RUN 7z e /tmp/coreos_developer_container.bin "usr/lib64/modules/*-coreos*/build/.config"
+RUN 7z e /tmp/coreos_developer_container.bin "usr/lib64/modules/*-coreos*/build/Module.symvers"
 RUN 7z e /tmp/coreos_developer_container.bin "usr/lib64/modules/*-coreos*/build/include/config/kernel.release" && cp kernel.release /tmp/kernel.release
 RUN make modules_prepare
 RUN sed -i -e "s/${KERNEL_VERSION}/$(cat /tmp/kernel.release)/" include/generated/utsrelease.h
